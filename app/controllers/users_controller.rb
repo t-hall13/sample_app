@@ -12,11 +12,16 @@ class UsersController < ApplicationController
 	end
 
   def new
+    unless !signed_in?
+      flash[:error] = "Already signed in as a registered user!"
+      redirect_to root_url
+    else
   	@user = User.new
+    end
   end
 
   def create
-  	@user = User.new(user_params)
+  	@user = User.new(user_params) 
   	if @user.save
       sign_in @user
       flash[:success] = "Welcome to the Sample App!"
@@ -41,9 +46,12 @@ class UsersController < ApplicationController
   end
 
   def destroy
-      User.find(params[:id]).destroy
-      flash[:success] = "User deleted"
-      redirect_to users_url
+      user = User.find(params[:id])
+      unless current_user?(user) 
+      user.destroy 
+        flash[:success] = "User deleted"
+      end
+      redirect_to users_path
   end
     
   
@@ -51,7 +59,7 @@ class UsersController < ApplicationController
   private
 
   def user_params
-  	params.require(:user).permit(:name, :email, :password, :password_confirmation)	
+  	params.require(:user).permit(:name, :email, :password, :password_confirmation, :admin)	
   end
 
   def signed_in_user
