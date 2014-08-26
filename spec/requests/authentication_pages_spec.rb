@@ -4,12 +4,12 @@ describe "Authentication" do
   
   subject { page }
 
-	  describe "signin page" do 
+	describe "signin page" do 
 	  	before { visit signin_path }
 
 	  	it { should have_content('Sign in') }
 	  	it { should have_title('Sign in') }
-	  end	
+	    end	
 
 	  describe "signin" do 
 	  	before { visit signin_path }
@@ -60,7 +60,8 @@ describe "Authentication" do
 
 			it "should render the desired protected page" do 
 				expect(page).to have_title('Edit user')
-				end
+
+		end
 
 		describe "when signing in again" do 
 			before do
@@ -75,85 +76,100 @@ describe "Authentication" do
 			end
 		end
 
-		describe "in the Users controller" do 
+			describe "in the Users controller" do 
 
-			describe "visiting the edit page" do 
-				before { visit edit_user_path(user) }
-				it { should have_title('Edit user') }
-			end
+				describe "visiting the edit page" do 
+					before { visit edit_user_path(user) }
+					it { should have_title('Edit user') }
+				end
 
-			describe "submitting to the update action" do 
-				before { patch user_path(user) }
-				specify { expect(response).to redirect_to(signin_path) }
-			end
+				describe "submitting to the update action" do 
+					before { patch user_path(user) }
+					specify { expect(response).to redirect_to(signin_path) }
+				end
 		 	
-		 	describe "visiting the user index" do 
-			before { visit users_path }
-			it { should have_title('All users') }
-			end
-	   end
+				describe "visiting the user index" do 
+					before { visit users_path }
+					it { should have_title('All users') }
+				end
 
-	   describe  "in the Microposts controller" do 
+				describe "visiting the following page" do
+					before { visit following_user_path(user) }
+					it { should have_title('Following') }
+				end
 
-	   	describe "submitting to the create action" do 
-	   		before { post microposts_path }
-	   		specify { expect(response).to redirect_to(signin_path)}
-	   	end
+				describe "visiting the followers page" do
+					before { visit followers_user_path(user) }
+					it { should have_title('Followers') }
+				end
+	    	end						
 
-	   	describe "submitting to the destroy action" do 
-	   		before { delete micropost_path(FactoryGirl.create(:micropost)) }
-	   		specify { expect(response).to redirect_to(signin_path) }
-	   	end
-	   end
+	   	describe  "in the Microposts controller" do 
+
+			   	describe "submitting to the create action" do 
+			   		before { post microposts_path }
+			   		specify { expect(response).to redirect_to(signin_path)}
+			   	end
+
+			   	describe "submitting to the destroy action" do 
+			   		before { delete micropost_path(FactoryGirl.create(:micropost)) }
+			   		specify { expect(response).to redirect_to(signin_path) }
+			   	end
+	    end
 	
-		
-	end
+				describe "in the Relationships controller" do 
+					describe "submitting to the create action" do 
+						before { post relationships_path }
+						specify { expect(response).to redirect_to(signin_path) }
+					end
 
-			describe "as wrong user" do 
-				let(:user) {FactoryGirl.create(:user)}
-				let(:wrong_user) {FactoryGirl.create(:user, email: "wrong@example.com")} 
-				before { sign_in user, no_capybara: true }
+					describe "submitting to the destroy action" do
+						before { delete relationship_path(1) }
+						specify { expect(response).to redirect_to(signin_path) }
+					end
+				end
+	
 
-				describe "submitting a GET request to the Users#edit action" do 
-					before { get edit_user_path(wrong_user)}
-					specify {expect(response.body).not_to match(full_title('Edit user')) }
+				describe "as wrong user" do 
+					let(:user) {FactoryGirl.create(:user)}
+					let(:wrong_user) {FactoryGirl.create(:user, email: "wrong@example.com")} 
+					before { sign_in user, no_capybara: true }
+
+					describe "submitting a GET request to the Users#edit action" do 
+						before { get edit_user_path(wrong_user)}
+						specify {expect(response.body).not_to match(full_title('Edit user')) }
+						specify { expect(response).to redirect_to(root_url)}
+					end
+
+					describe "submitting a PATCH request to the Users#update action" do 
+					before { patch user_path(wrong_user)}
 					specify { expect(response).to redirect_to(root_url)}
+					end
 				end
+	end
 
-				describe "submitting a PATCH request to the Users#update action" do 
-				before { patch user_path(wrong_user)}
-				specify { expect(response).to redirect_to(root_url)}
+				describe "as non-admin user" do 
+					let(:user) { FactoryGirl.create(:user) }
+					let(:non_admin) { FactoryGirl.create(:user) }
+
+					before { sign_in non_admin, no_capybara: true }
+
+					describe "submitting a DELETE request to the Users#destroy action" do 
+						before { delete user_path(user)}
+						specify { expect(response).to redirect_to(root_url) }
+					end
 				end
-			end
-	end
+				describe "as an admin user" do
+					let(:admin) {FactoryGirl.create(:admin)}
+					before { sign_in admin }
 
-	describe "as non-admin user" do 
-		let(:user) { FactoryGirl.create(:user) }
-		let(:non_admin) { FactoryGirl.create(:user) }
-
-		before { sign_in non_admin, no_capybara: true }
-
-		describe "submitting a DELETE request to the Users#destroy action" do 
-			before { delete user_path(user)}
-			specify { expect(response).to redirect_to(root_url) }
-		end
-	end
-	describe "as an admin user" do
-		let(:admin) {FactoryGirl.create(:admin)}
-		before { sign_in admin }
-
-		describe "deleting him/her self" do 
-			it "should not be possible" do
-				expect {delete user_path(admin).to_not change(User, :count).by(-1)}
-			end
-		end
-	end
-
-  end
-end
-
-
-		
-
-  
+					describe "deleting him/her self" do 
+						it "should not be possible" do
+							expect {delete user_path(admin).to_not change(User, :count).by(-1)}
+						end
+					end
+				end
+        end
+     end
+ end
 

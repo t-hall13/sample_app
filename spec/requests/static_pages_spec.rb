@@ -26,32 +26,48 @@ describe "StaticPages" do
 
       it { should_not have_title('| Home') }
 
-        describe "for signed-in users" do 
-          let(:user) { FactoryGirl.create(:user) }
-          before do 
-            31.times { FactoryGirl.create(:micropost, user: user, content: "Lorem ipsum") }
-            # FactoryGirl.create(:micropost, user: user, content: "Dolor sit amet")
-            sign_in user
-            visit root_path
-          end
+          describe "for signed-in users" do 
+            let(:user) { FactoryGirl.create(:user) }
+            before do 
+               FactoryGirl.create(:micropost, user: user, content: "Lorem") 
+               FactoryGirl.create(:micropost, user: user, content: "Ipsum") 
+              # FactoryGirl.create(:micropost, user: user, content: "Dolor sit amet")
+              sign_in user
+              visit root_path
+            end
 
-          after { user.microposts.delete_all }
+            #after { user.microposts.delete_all }
 
-          it "should render the user's feed" do 
-            user.feed.paginate(page:1).each do |item|
-              expect(page).to have_selector("li##{item.id}", text: item.content)
+            it "should render the user's feed" do 
+              # user.feed.paginate(page:1).each do |item|
+                user.feed.each do |item|
+                expect(page).to have_selector("li##{item.id}", text: item.content)
+              end
+            end
+
+            describe "follower/following counts" do 
+              let(:other_user) { FactoryGirl.create(:user) }
+              before do
+                other_user.follow!(user)
+                visit root_path
+              end
+
+              it { should have_link("0 following", href: following_user_path(user)) }
+              it { should have_link("1 followers", href: followers_user_path(user)) }
             end
           end
+      end
 
-          it " should have micropost count and pluralize" do
-            page.should have_content('31 microposts')
-          end
 
-          it "should paginate after 30 microposts" do  
-            page.should have_selector('div.pagination')
-          end
-        end
-    end
+                          # it " should have micropost count and pluralize" do
+                          #   page.should have_content('31 microposts')
+                          # end
+
+                          # it "should paginate after 30 microposts" do  
+                          #   page.should have_selector('div.pagination')
+                          # end
+                        #end
+                    #end
 
     describe "Help page" do
       before {visit help_path}
@@ -60,7 +76,6 @@ describe "StaticPages" do
       let(:page_title) { 'Help' }
 
       it_should_behave_like "all static pages"
-    
     end
 
     describe "About page" do
@@ -94,6 +109,5 @@ describe "StaticPages" do
       expect(page).to have_title(full_title('Sign up'))
       click_link "sample app"
       expect(page).to have_title(full_title(''))
-  
     end 
 end
